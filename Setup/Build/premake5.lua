@@ -220,7 +220,21 @@ project "KurisuEngine"
 
 	pchheader "EnginePCH.h"
 	pchsource (ProjectRoot .. "/Source/Runtime/EnginePCH.cpp")
+	
+	-- Recast/Detour 포함 코드
+	local nav = ProjectRoot .. "/Source/ThirdParty/RecastNavigation"
 
+	includedirs { nav .. "/Recast/Include", nav .. "/Detour/Include" }
+	files {
+	    nav .. "/Recast/Include/*.h", nav .. "/Recast/Source/*.cpp",
+	    nav .. "/Detour/Include/*.h", nav .. "/Detour/Source/*.cpp",
+	}
+	vpaths { ["ThirdParty/RecastNavigation/*"] = nav .. "/**" }
+	
+	filter "files:**/RecastNavigation/**.cpp"
+	    enablepch "Off"
+	filter {}
+	
 	files
 	{
 		ProjectRoot .. "/Source/Runtime/**.h",
