@@ -1,0 +1,269 @@
+{
+  "Version": 5,
+  "World": {
+    "Properties": {},
+    "PersistentLevel": {
+      "Properties": {},
+      "Actors": [
+        {
+          "Class": "AStaticMeshActor",
+          "Name": "Lab_Floor",
+          "RootComponentName": "UStaticMeshComponent",
+          "Properties": {},
+          "Components": [
+            {
+              "Class": "UStaticMeshComponent",
+              "Name": "UStaticMeshComponent",
+              "DefaultSubobjectName": "UStaticMeshComponent",
+              "Parent": "",
+              "Properties": {
+                "StaticMesh": "Cube",
+                "Mobility": "Static",
+                "bUseDefaultCollision": false,
+                "BodyInstance": {
+                  "CollisionProfileName": "BlockAll",
+                  "CollisionEnabled": "QueryAndPhysics",
+                  "bSimulatePhysics": false,
+                  "bEnableGravity": false
+                },
+                "Transform": {
+                  "Location": { "X": 0, "Y": 0, "Z": -25 },
+                  "Rotation": { "Pitch": 0, "Yaw": 0, "Roll": 0 },
+                  "Scale": { "X": 18, "Y": 12, "Z": 0.5 }
+                }
+              },
+              "OverrideMaterials": [
+                {
+                  "Base": "DefaultMaterial",
+                  "Instance": {
+                    "Properties": {},
+                    "BaseColor": { "X": 0.25, "Y": 0.32, "Z": 0.42, "W": 1 },
+                    "SpecularColor": { "X": 0.1, "Y": 0.1, "Z": 0.1 },
+                    "Shininess": 32,
+                    "UVScrollSpeed": [0, 0],
+                    "FlipNormalY": false,
+                    "SamplerState": "LinearWrap",
+                    "Textures": ["WhiteTexture", "FlatNormalTexture"]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Class": "AStaticMeshActor",
+          "Name": "Lab_DropBox",
+          "RootComponentName": "UStaticMeshComponent",
+          "Properties": {},
+          "Components": [
+            {
+              "Class": "UStaticMeshComponent",
+              "Name": "UStaticMeshComponent",
+              "DefaultSubobjectName": "UStaticMeshComponent",
+              "Parent": "",
+              "Properties": {
+                "StaticMesh": "Cube",
+                "Mobility": "Movable",
+                "bUseDefaultCollision": false,
+                "BodyInstance": {
+                  "CollisionProfileName": "PhysicsActor",
+                  "CollisionEnabled": "QueryAndPhysics",
+                  "bSimulatePhysics": true,
+                  "bEnableGravity": true,
+                  "MassInKgOverride": 25
+                },
+                "Transform": {
+                  "Location": { "X": 120, "Y": 0, "Z": 440 },
+                  "Rotation": { "Pitch": 0, "Yaw": 0, "Roll": 0 },
+                  "Scale": { "X": 1.4, "Y": 1.5, "Z": 1.6 }
+                }
+              },
+              "OverrideMaterials": [
+                {
+                  "Base": "DefaultMaterial",
+                  "Instance": {
+                    "Properties": {},
+                    "BaseColor": { "X": 0.9, "Y": 0.23, "Z": 0.04, "W": 1 },
+                    "SpecularColor": { "X": 0.1, "Y": 0.1, "Z": 0.1 },
+                    "Shininess": 32,
+                    "UVScrollSpeed": [0, 0],
+                    "FlipNormalY": false,
+                    "SamplerState": "LinearWrap",
+                    "Textures": ["WhiteTexture", "FlatNormalTexture"]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Class": "AStaticMeshActor",
+          "Name": "Lab_SweepWall",
+          "RootComponentName": "UStaticMeshComponent",
+          "Properties": {},
+          "Components": [
+            {
+              "Class": "UStaticMeshComponent",
+              "Name": "UStaticMeshComponent",
+              "DefaultSubobjectName": "UStaticMeshComponent",
+              "Parent": "",
+              "Properties": {
+                "StaticMesh": "Cube",
+                "Mobility": "Static",
+                "bUseDefaultCollision": false,
+                "BodyInstance": {
+                  "CollisionProfileName": "BlockAll",
+                  "CollisionEnabled": "QueryAndPhysics",
+                  "bSimulatePhysics": false,
+                  "bEnableGravity": false
+                },
+                "Transform": {
+                  "Location": { "X": 620, "Y": 0, "Z": 120 },
+                  "Rotation": { "Pitch": 0, "Yaw": 0, "Roll": 0 },
+                  "Scale": { "X": 0.45, "Y": 5, "Z": 2.4 }
+                }
+              },
+              "OverrideMaterials": [
+                {
+                  "Base": "DefaultMaterial",
+                  "Instance": {
+                    "Properties": {},
+                    "BaseColor": { "X": 0.13, "Y": 0.28, "Z": 0.58, "W": 1 },
+                    "SpecularColor": { "X": 0.1, "Y": 0.1, "Z": 0.1 },
+                    "Shininess": 32,
+                    "UVScrollSpeed": [0, 0],
+                    "FlipNormalY": false,
+                    "SamplerState": "LinearWrap",
+                    "Textures": ["WhiteTexture", "FlatNormalTexture"]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Class": "AMyCharacter",
+          "Name": "Lab_Walker",
+          "RootComponentName": "CapsuleComponent",
+          "Properties": {},
+          "Components": [
+            {
+              "Class": "UCapsuleComponent",
+              "Name": "CapsuleComponent",
+              "DefaultSubobjectName": "CapsuleComponent",
+              "Parent": "",
+              "Properties": {
+                "Mobility": "Movable",
+                "CapsuleRadius": 50,
+                "CapsuleHalfHeight": 100,
+                "bDrawOnlyIfSelected": true,
+                "BodyInstance": {
+                  "CollisionProfileName": "Pawn",
+                  "CollisionEnabled": "QueryAndPhysics",
+                  "bSimulatePhysics": false,
+                  "bEnableGravity": false
+                },
+                "Transform": {
+                  "Location": { "X": -520, "Y": 0, "Z": 100 },
+                  "Rotation": { "Pitch": 0, "Yaw": 0, "Roll": 0 },
+                  "Scale": { "X": 1, "Y": 1, "Z": 1 }
+                }
+              }
+            },
+            {
+              "Class": "UCharacterMovementComponent",
+              "Name": "CharacterMovementComponent",
+              "DefaultSubobjectName": "CharacterMovementComponent",
+              "Parent": "",
+              "Properties": { "MaxWalkSpeed": 220 }
+            },
+            {
+              "Class": "USpringArmComponent",
+              "Name": "SpringArmComponent",
+              "DefaultSubobjectName": "SpringArmComponent",
+              "Parent": "CapsuleComponent",
+              "Properties": {
+                "TargetArmLength": 460,
+                "TargetOffset": { "X": 0, "Y": 0, "Z": 85 },
+                "SocketOffset": { "X": 0, "Y": 145, "Z": 0 },
+                "bDoCollisionTest": false,
+                "bDrawDebug": false
+              }
+            },
+            {
+              "Class": "UStaticMeshComponent",
+              "Name": "PlayerMarker",
+              "Parent": "CapsuleComponent",
+              "Properties": {
+                "StaticMesh": "Capsule",
+                "Mobility": "Movable",
+                "bUseDefaultCollision": false,
+                "BodyInstance": {
+                  "CollisionProfileName": "NoCollision",
+                  "CollisionEnabled": "NoCollision",
+                  "bSimulatePhysics": false,
+                  "bEnableGravity": false
+                },
+                "Transform": {
+                  "Location": { "X": 0, "Y": 0, "Z": 0 },
+                  "Rotation": { "Pitch": 0, "Yaw": 0, "Roll": 0 },
+                  "Scale": { "X": 0.62, "Y": 0.62, "Z": 0.84 }
+                }
+              },
+              "OverrideMaterials": [
+                {
+                  "Base": "DefaultMaterial",
+                  "Instance": {
+                    "Properties": {},
+                    "BaseColor": { "X": 0.04, "Y": 0.65, "Z": 0.57, "W": 1 },
+                    "SpecularColor": { "X": 0.1, "Y": 0.1, "Z": 0.1 },
+                    "Shininess": 32,
+                    "UVScrollSpeed": [0, 0],
+                    "FlipNormalY": false,
+                    "SamplerState": "LinearWrap",
+                    "Textures": ["WhiteTexture", "FlatNormalTexture"]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Class": "ADirectionalLightActor",
+          "Name": "Lab_KeyLight",
+          "Properties": {},
+          "Components": [
+            {
+              "Class": "UDirectionalLightComponent",
+              "Name": "UDirectionalLightComponent",
+              "DefaultSubobjectName": "UDirectionalLightComponent",
+              "Parent": "",
+              "Properties": {
+                "Intensity": 1.5,
+                "Transform": {
+                  "Location": { "X": -350, "Y": -250, "Z": 500 },
+                  "Rotation": { "Pitch": 45, "Yaw": 30, "Roll": 0 },
+                  "Scale": { "X": 1, "Y": 1, "Z": 1 }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Class": "AAmbientLightActor",
+          "Name": "Lab_FillLight",
+          "Properties": {},
+          "Components": [
+            {
+              "Class": "UAmbientLightComponent",
+              "Name": "USkyLightComponent",
+              "DefaultSubobjectName": "USkyLightComponent",
+              "Parent": "",
+              "Properties": { "Intensity": 0.3, "bCastShadows": false }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
