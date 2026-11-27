@@ -89,7 +89,7 @@ void FLevelEditorToolbar::DrawPlacementGroup()
 	BeginToolbarGroup();
 
 	EditorStyle::FPopupAnchor AddAnchor{}, SnapAnchor{}, RotSnapAnchor{}, ScaleSnapAnchor{}, GridAnchor{};
-	if (DropdownButton("##AddActor", "AddActor", nullptr))
+	if (DropdownButton("##AddActor", "Add", nullptr, "AddBadge"))
 		ImGui::OpenPopup("LevelAddPopup");
 	AddAnchor = EditorStyle::LastItemAnchor();
 	if (ImGui::IsItemHovered() && !ImGui::IsPopupOpen("LevelAddPopup"))
