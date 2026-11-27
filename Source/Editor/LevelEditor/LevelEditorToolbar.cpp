@@ -167,17 +167,18 @@ void FLevelEditorToolbar::DrawPlacementGroup()
 		if (DrawAddMenu) DrawAddMenu();
 		ImGui::EndPopup();
 	}
-	if (EditorStyle::BeginButtonPopup("LevelSnapPopup", SnapAnchor))
+	const float SnapPopupWidth = EditorStyle::Scale(180.0f);
+	if (EditorStyle::BeginButtonPopup("LevelSnapPopup", SnapAnchor, SnapPopupWidth))
 	{
 		if (DrawSnapMenu) DrawSnapMenu();
 		ImGui::EndPopup();
 	}
-	if (EditorStyle::BeginButtonPopup("LevelRotSnapPopup", RotSnapAnchor))
+	if (EditorStyle::BeginButtonPopup("LevelRotSnapPopup", RotSnapAnchor, SnapPopupWidth))
 	{
 		if (DrawRotationSnapMenu) DrawRotationSnapMenu();
 		ImGui::EndPopup();
 	}
-	if (EditorStyle::BeginButtonPopup("LevelScaleSnapPopup", ScaleSnapAnchor))
+	if (EditorStyle::BeginButtonPopup("LevelScaleSnapPopup", ScaleSnapAnchor, SnapPopupWidth))
 	{
 		if (DrawScaleSnapMenu) DrawScaleSnapMenu();
 		ImGui::EndPopup();

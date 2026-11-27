@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <initializer_list>
 
 namespace
 {
@@ -578,109 +579,98 @@ float FViewportsPanel::GetLocationSnapSize() const
 	return EditorSettings ? EditorSettings->GetSettings().LocationSnapSize : 1.0f;
 }
 
+namespace
+{
+	struct FSnapMenuStyle
+	{
+		const char* Title;
+		const char* PresetFormat;
+		const char* InputFormat;
+		float DragSpeed;
+		float MinStep;
+		float MaxStep;
+		float SelectionTolerance;
+		bool bClearStepWhenOff = false;
+	};
+
+	void DrawSnapSettings(const FSnapMenuStyle& Style, std::initializer_list<float> Presets,
+		bool& bEnabled, float& Step)
+	{
+		ImGui::SeparatorText(Style.Title);
+		if (ImGui::MenuItem("Off", nullptr, !(bEnabled && Step > 0.0f)))
+		{
+			bEnabled = false;
+			if (Style.bClearStepWhenOff)
+				Step = 0.0f;
+		}
+
+		for (const float Preset : Presets)
+		{
+			char Label[24];
+			std::snprintf(Label, sizeof(Label), Style.PresetFormat, Preset);
+			if (ImGui::MenuItem(Label, nullptr, bEnabled && std::fabs(Step - Preset) < Style.SelectionTolerance))
+			{
+				Step = Preset;
+				bEnabled = true;
+			}
+		}
+
+		ImGui::SeparatorText("Custom Step");
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		if (ImGui::DragFloat("##SnapStep", &Step, Style.DragSpeed, Style.MinStep, Style.MaxStep, Style.InputFormat))
+		{
+			Step = FMath::Clamp(Step, Style.MinStep, Style.MaxStep);
+			bEnabled = Step > 0.0f;
+		}
+	}
+}
+
 void FViewportsPanel::DrawSnapMenu()
 {
 	if (!EditorSettings)
 		return;
 	FEditorSettings& Settings = EditorSettings->GetMutableSettings();
-
-	ImGui::SeparatorText("Snap");
-	const bool bSnapOn = IsLocationSnapEnabled();
-	if (ImGui::MenuItem("Off", nullptr, !bSnapOn))
-		SetLocationSnapEnabled(false);
-	for (const float Preset : {1.0f, 5.0f, 10.0f, 50.0f, 100.0f, 500.0f, 1000.0f})
-	{
-		char Label[24];
-		std::snprintf(Label, sizeof(Label), "%g##SnapPreset", Preset);
-		const bool bSelected = bSnapOn && std::fabs(Settings.LocationSnapSize - Preset) < 1e-4f;
-		if (ImGui::MenuItem(Label, nullptr, bSelected))
-		{
-			Settings.LocationSnapSize = Preset;
-			Settings.bLocationSnap = true;
-		}
-	}
-	ImGui::SetNextItemWidth(EditorStyle::Scale(120.0f));
-	if (ImGui::DragFloat("Snap size (cm)", &Settings.LocationSnapSize, 1.0f, 0.0f, 100000.0f, "%.2g"))
-	{
-		Settings.LocationSnapSize = FMath::Clamp(Settings.LocationSnapSize, 0.0f, 100000.0f);
-		Settings.bLocationSnap = Settings.LocationSnapSize > 0.0f;
-	}
+	DrawSnapSettings({"Location Snap", "%g cm", "%.2g cm", 1.0f, 0.0f, 100000.0f, 1e-4f, true},
+		{1.0f, 5.0f, 10.0f, 50.0f, 100.0f, 500.0f, 1000.0f}, Settings.bLocationSnap, Settings.LocationSnapSize);
 }
 
 bool FViewportsPanel::IsRotationSnapEnabled() const
 {
-    return EditorSettings && EditorSettings->GetSettings().bRotationSnap;
+	return EditorSettings && EditorSettings->GetSettings().bRotationSnap;
 }
 
 float FViewportsPanel::GetRotationSnapDegrees() const
 {
-    return EditorSettings ? EditorSettings->GetSettings().RotationSnapDegrees : 5.0f;
+	return EditorSettings ? EditorSettings->GetSettings().RotationSnapDegrees : 5.0f;
 }
 
 bool FViewportsPanel::IsScaleSnapEnabled() const
 {
-    return EditorSettings && EditorSettings->GetSettings().bScaleSnap;
+	return EditorSettings && EditorSettings->GetSettings().bScaleSnap;
 }
 
 float FViewportsPanel::GetScaleSnapSize() const
 {
-    return EditorSettings ? EditorSettings->GetSettings().ScaleSnapSize : 0.25f;
+	return EditorSettings ? EditorSettings->GetSettings().ScaleSnapSize : 0.25f;
 }
 
-// 회전 스냅: 끄기와 자주 쓰는 각도 목록
 void FViewportsPanel::DrawRotationSnapMenu()
 {
-    if (!EditorSettings) return;
-    FEditorSettings& Settings = EditorSettings->GetMutableSettings();
-
-    ImGui::SeparatorText("Rotation Snap");
-    if (ImGui::MenuItem("Off", nullptr, !Settings.bRotationSnap))
-        Settings.bRotationSnap = false;
-    for (const float Preset : { 5.0f, 10.0f, 15.0f, 30.0f, 45.0f, 60.0f, 90.0f, 120.0f })
-    {
-        char Label[24];
-        std::snprintf(Label, sizeof(Label), "%g°##RotSnapPreset", Preset);
-        const bool bSelected = Settings.bRotationSnap && std::fabs(Settings.RotationSnapDegrees - Preset) < 1e-3f;
-        if (ImGui::MenuItem(Label, nullptr, bSelected))
-        {
-            Settings.RotationSnapDegrees = Preset;
-            Settings.bRotationSnap = true;
-        }
-    }
-    ImGui::SetNextItemWidth(EditorStyle::Scale(120.0f));
-    if (ImGui::DragFloat("Degrees", &Settings.RotationSnapDegrees, 0.5f, 0.1f, 180.0f, "%.1f°"))
-    {
-        Settings.RotationSnapDegrees = FMath::Clamp(Settings.RotationSnapDegrees, 0.1f, 180.0f);
-        Settings.bRotationSnap = true;
-    }
+	if (!EditorSettings)
+		return;
+	FEditorSettings& Settings = EditorSettings->GetMutableSettings();
+	DrawSnapSettings({"Rotation Snap", "%g°", "%.1f°", 0.5f, 0.1f, 180.0f, 1e-3f},
+		{5.0f, 10.0f, 15.0f, 30.0f, 45.0f, 60.0f, 90.0f, 120.0f},
+		Settings.bRotationSnap, Settings.RotationSnapDegrees);
 }
 
-// 크기 스냅: 끄기와 자주 쓰는 배율 간격 목록
 void FViewportsPanel::DrawScaleSnapMenu()
 {
-    if (!EditorSettings) return;
-    FEditorSettings& Settings = EditorSettings->GetMutableSettings();
-
-    ImGui::SeparatorText("Scale Snap");
-    if (ImGui::MenuItem("Off", nullptr, !Settings.bScaleSnap))
-        Settings.bScaleSnap = false;
-    for (const float Preset : { 0.0625f, 0.125f, 0.25f, 0.5f, 1.0f, 10.0f })
-    {
-        char Label[24];
-        std::snprintf(Label, sizeof(Label), "%g##ScaleSnapPreset", Preset);
-        const bool bSelected = Settings.bScaleSnap && std::fabs(Settings.ScaleSnapSize - Preset) < 1e-5f;
-        if (ImGui::MenuItem(Label, nullptr, bSelected))
-        {
-            Settings.ScaleSnapSize = Preset;
-            Settings.bScaleSnap = true;
-        }
-    }
-    ImGui::SetNextItemWidth(EditorStyle::Scale(120.0f));
-    if (ImGui::DragFloat("Step", &Settings.ScaleSnapSize, 0.01f, 0.001f, 100.0f, "%.4g"))
-    {
-        Settings.ScaleSnapSize = FMath::Clamp(Settings.ScaleSnapSize, 0.001f, 100.0f);
-        Settings.bScaleSnap = true;
-    }
+	if (!EditorSettings)
+		return;
+	FEditorSettings& Settings = EditorSettings->GetMutableSettings();
+	DrawSnapSettings({"Scale Snap", "%g", "%.4g", 0.01f, 0.001f, 100.0f, 1e-5f},
+		{0.0625f, 0.125f, 0.25f, 0.5f, 1.0f, 10.0f}, Settings.bScaleSnap, Settings.ScaleSnapSize);
 }
 
 void FViewportsPanel::DrawGridMenu()
