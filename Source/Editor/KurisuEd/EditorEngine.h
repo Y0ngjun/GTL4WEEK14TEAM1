@@ -316,6 +316,7 @@ private:
 	void OpenSceneFromPath(const FString& Path);
 	void SaveCurrentScene();
 	void SaveSceneAs();
+	void BuildNavigation();
 	void QueueProjectThumbnail(bool bOnlyIfMissing = false);
 	void SaveProjectThumbnail();
 	FString PendingThumbnailScene;

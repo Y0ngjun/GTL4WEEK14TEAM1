@@ -1,6 +1,8 @@
 #include "EnginePCH.h"
 #include "Editor/OutputLog/OutputLogPanel.h"
 #include "Editor/EditorUI/EditorStyle.h"
+#include "Editor/KurisuEd/Editor.h"
+#include "Editor/KurisuEd/EditorEngine.h"
 
 #include "Core/StatOverlay.h"
 #include "Render/SceneRenderer.h"
@@ -14,7 +16,7 @@
 #include "Particles/ParticleTypes.h"
 #include "UObject/UObjectIterator.h"
 #include "Engine/World.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/PlayerController.h"
 #include <format>
 #include <memory>
 #include <utility>
@@ -844,6 +846,42 @@ void FOutputLogPanel::RegisterCommands()
 	    {
 			ClearLog();
 			return true; });
+
+	Add("NAV.MOVE", "NAV.MOVE <X> <Y> <Z>", [](const TArray<FString>& Args, const FString&)
+	    {
+			FVector Goal;
+			if (Args.Num() != 4 || !ParseNumber(Args[1], Goal.X) ||
+				!ParseNumber(Args[2], Goal.Y) || !ParseNumber(Args[3], Goal.Z))
+				return false;
+
+			const FWorldContext* Context = GEditor && GEditor->GetPIEState() == EPIEState::Playing
+				? GEditor->GetWorldContextFromType(EWorldType::PIE) : nullptr;
+			UWorld* World = Context ? Context->World() : nullptr;
+			APlayerController* Controller = World ? World->GetPlayerController() : nullptr;
+			if (!Controller)
+			{
+				FLog::Log(ELogVerbosity::Warning, "[NavMesh] Build Navigation 후 캐릭터로 Play하세요.");
+				return true;
+			}
+
+			const FNavigationPathResult Result = Controller->MoveToLocation(Goal);
+			switch (Result.Status)
+			{
+			case ENavigationQueryResult::Success:
+				FLog::Log(ELogVerbosity::Info, "[NavMesh] 월드 경로 추종 시작: 경로점 {}개.", Result.PathPoints.Num());
+				break;
+			case ENavigationQueryResult::NoNavigationData:
+				FLog::Log(ELogVerbosity::Warning, "[NavMesh] 내비메시가 없습니다. Play를 종료한 뒤 Build Navigation을 실행하세요.");
+				break;
+			case ENavigationQueryResult::NoPath:
+				FLog::Log(ELogVerbosity::Warning, "[NavMesh] 목적지까지 경로가 없습니다.");
+				break;
+			case ENavigationQueryResult::Error:
+				FLog::Log(ELogVerbosity::Warning, "[NavMesh] 이동 요청 실패: {}", Result.FailedAt);
+				break;
+			}
+			return true;
+	    });
 
 	Add("HISTORY", "HISTORY", [this](const TArray<FString>&, const FString&)
 	    {

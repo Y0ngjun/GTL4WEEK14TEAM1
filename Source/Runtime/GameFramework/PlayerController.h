@@ -2,6 +2,8 @@
 
 #include "GameFramework/Actor.h"
 #include "Input/InputSystem.h"
+#include "Components/PathFollowingComponent.h"
+#include "Navigation/NavigationTypes.h"
 #include "PlayerController.generated.h"
 
 class APawn;
@@ -19,6 +21,11 @@ public:
 	void Possess(APawn* InPawn);
 	void UnPossess();
 	APawn* GetPawn() const { return PossessedPawn; }
+	FNavigationPathResult MoveToLocation(const FVector& Goal, float AcceptanceRadius = 12.0f);
+	bool RequestFollowPath(const TArray<FVector>& WorldPath, float AcceptanceRadius);
+	void StopFollowingPath();
+	bool IsFollowingPath() const { return PathFollowingComponent->IsFollowing(); }
+	ENavigationPathFollowStatus GetPathFollowStatus() const { return PathFollowingComponent->GetStatus(); }
 	virtual void InputKey(int32 Key, bool bDown);
 	bool IsKeyDown(int32 Key) const { return Key >= 0 && Key < 256 && bKeyDown[Key]; }
 	virtual void InputAxis(EGameInputAxis Axis, float Delta);
@@ -40,6 +47,7 @@ public:
 private:
 	APlayerCameraManager* PlayerCameraManager = nullptr;
 	APawn* PossessedPawn = nullptr;
+	UPathFollowingComponent* PathFollowingComponent = nullptr;
 	bool bKeyDown[256]{};
 protected:
 	float MouseAxisX = 0.0f;

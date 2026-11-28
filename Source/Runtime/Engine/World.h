@@ -32,6 +32,7 @@ class FPhysicsSystem;
 class USkinnedMeshComponent;
 class USkeletalMeshComponent;
 class ASkeletalMeshActor;
+class UNavigationSystemV1;
 
 struct FViewContext;
 
@@ -91,6 +92,7 @@ public:
 	                           const FCollisionShape& Shape, const FCollisionQueryParams& Params = FCollisionQueryParams()) const;
 
 	void ClearWorld();
+	UNavigationSystemV1* GetNavigationSystem() const;
 
 	void CreateMainCamera();
 

@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Navigation/NavigationSystem.h"
 #include "Render/LineBatcher.h"
 #include "World.h"
 #include "Level.h"
@@ -200,6 +201,13 @@ UWorld::UWorld()
 
 UWorld::~UWorld()
 {
+	// 종료 시 UObject 일괄 정리에서 이미 삭제됐으면 검색 결과는 nullptr이다.
+	delete GetNavigationSystem();
+}
+
+UNavigationSystemV1* UWorld::GetNavigationSystem() const
+{
+	return FindObjectFast<UNavigationSystemV1>(const_cast<UWorld*>(this), FName("NavigationSystem"));
 }
 
 bool UWorld::Init(FPhysicsSystem* PhysicsSystem)
@@ -232,6 +240,7 @@ bool UWorld::Init(FPhysicsSystem* PhysicsSystem)
 	PersistentLevel->SetWorld(this);
 	Levels.Add(PersistentLevel);
 	CurrentLevel = PersistentLevel;
+	NewObject<UNavigationSystemV1>(this, FName("NavigationSystem"), EObjectFlags::RF_Transient);
 
 	// 카메라 생성
 	CreateMainCamera();
@@ -771,6 +780,9 @@ void UWorld::PreviewWorldTick(float DeltaTime)
 
 void UWorld::ClearWorld()
 {
+	if (UNavigationSystemV1* NavigationSystem = GetNavigationSystem())
+		NavigationSystem->Clear();
+
 	// 지연 삭제 대기 중인 액터는 이미 레벨에서 빠져 있으므로 따로 해제한다.
 	FlushPendingDestroyActors();
 
@@ -1467,6 +1479,12 @@ UWorld* UWorld::GetDuplicatedWorldForPIE(UWorld* InWorld)
 	Params.PortFlags = EPropertyPortFlags::PPF_DuplicateForPIE;
 
 	StaticDuplicateObjectEx(Params);
+	const UNavigationSystemV1* SourceNavigation = InWorld->GetNavigationSystem();
+	UNavigationSystemV1* PIENavigation = PIEWorld->GetNavigationSystem();
+	if (SourceNavigation && PIENavigation && !PIENavigation->CopyBuiltDataFrom(*SourceNavigation))
+	{
+		KRS_LOG(Warning, "[NavMesh] Could not load the editor navigation data in PIE.");
+	}
 	return PIEWorld;
 }
 

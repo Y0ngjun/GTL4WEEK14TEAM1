@@ -99,6 +99,11 @@ void FLevelEditorTab::DrawMenuBar()
 
 	if (EditorStyle::BeginMenuBarMenu("Build"))
 	{
+		const bool bCanBuildNavigation = CanBuildNavigation && CanBuildNavigation();
+		if (ImGui::MenuItem("Build Navigation", nullptr, false, bCanBuildNavigation))
+		{
+			OnBuildNavigation.Broadcast();
+		}
 		const bool bCanPackage = !IsPackaging || !IsPackaging();
 		if (ImGui::MenuItem("Package Game (Release)", nullptr, false, bCanPackage))
 		{

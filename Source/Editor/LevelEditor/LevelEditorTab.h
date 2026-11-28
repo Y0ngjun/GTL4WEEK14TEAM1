@@ -28,10 +28,12 @@ public:
 	TDelegate<> OnUndo;
 	TDelegate<> OnRedo;
 	TDelegate<EFbxImportMode> OnImportFbx;
+	TDelegate<> OnBuildNavigation;
 	TDelegate<> OnPackageGame;
 	TDelegate<const FString&> OnLevelLoaded;
 
 	void SetIsPackagingQuery(std::function<bool()> InQuery) { IsPackaging = std::move(InQuery); }
+	void SetCanBuildNavigationQuery(std::function<bool()> InQuery) { CanBuildNavigation = std::move(InQuery); }
 	void SetUndoQueries(std::function<bool()> InCanUndo, std::function<bool()> InCanRedo,
 	                    std::function<const char*()> InUndoLabel = {}, std::function<const char*()> InRedoLabel = {})
 	{
@@ -68,6 +70,7 @@ public:
 
 private:
 	std::function<bool()> IsPackaging;
+	std::function<bool()> CanBuildNavigation;
 	std::function<bool()> CanUndoQuery;
 	std::function<bool()> CanRedoQuery;
 	std::function<const char*()> GetUndoLabelQuery;

@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Navigation/NavigationSystem.h"
 #include "Editor/EditorUI/EditorStyle.h"
 
 #include "Editor/KurisuEd/EditorEngine.h"
@@ -317,6 +318,8 @@ void UEditorEngine::InitLevelEditorTab()
 	                                  { Packager.Start("Release"); });
 	LevelEditorTab->SetIsPackagingQuery([this]()
 	                                    { return Packager.IsRunning(); });
+	LevelEditorTab->OnBuildNavigation.AddDynamic(this, &UEditorEngine::BuildNavigation);
+	LevelEditorTab->SetCanBuildNavigationQuery([this]() { return EditorWorld && !IsPlaying(); });
 
 	OutputLogPanel = LevelEditorTab->AddPanel<FOutputLogPanel>();
 	OutputLogPanel->SetOpen(false);
@@ -2196,6 +2199,23 @@ void UEditorEngine::SaveCurrentScene()
 }
 
 // 공통 파일 유틸리티로 새 경로에 씬을 저장한다.
+void UEditorEngine::BuildNavigation()
+{
+	auto* Navigation = UNavigationSystemV1::GetCurrent(EditorWorld);
+	if (!Navigation || IsPlaying())
+		return;
+
+	const FNavigationBuildResult Result = Navigation->Build();
+	if (Result.FailedAt)
+	{
+		KRS_LOG(Warning, "[NavMesh] Build Navigation 실패: {} (메시 {}, 삼각형 {})",
+			Result.FailedAt, Result.MeshComponentCount, Result.TriangleCount);
+		return;
+	}
+	KRS_LOG(Info, "[NavMesh] Build Navigation 완료: 메시 {}, 입력 삼각형 {}, 다각형 {}",
+		Result.MeshComponentCount, Result.TriangleCount, Result.PolygonCount);
+}
+
 void UEditorEngine::SaveSceneAs()
 {
 	if (IsPlaying())

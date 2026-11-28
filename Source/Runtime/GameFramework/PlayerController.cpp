@@ -6,11 +6,15 @@
 #include "Camera/CameraShakeBase.h"
 #include <cstring>
 #include "GameFramework/DefaultPawn.h"
+#include "GameFramework/Character.h"
+#include "Components/CapsuleComponent.h"
+#include "Navigation/NavigationSystem.h"
 
 APlayerController::APlayerController()
     : ControlRotation(FRotator::Identitiy)
 {
 	PrimaryActorTick.bCanEverTick = true;
+	PathFollowingComponent = CreateDefaultSubobject<UPathFollowingComponent>("PathFollowingComponent");
 }
 
 void APlayerController::Tick(float DeltaTime)
@@ -40,6 +44,24 @@ void APlayerController::ProcessPlayerInput(float DeltaTime)
 	MouseAxisX = MouseAxisY = 0.0f;
 	if (IsMoveInputIgnored())
 		return;
+
+	if (IsFollowingPath())
+	{
+		if (Forward != 0.0f || Right != 0.0f)
+		{
+			StopFollowingPath();
+		}
+		else
+		{
+			const FVector Direction = PathFollowingComponent->Update(PossessedPawn->GetActorLocation(), DeltaTime);
+			if (IsFollowingPath())
+				PossessedPawn->AddMovementInput(Direction);
+			else if (GetPathFollowStatus() == ENavigationPathFollowStatus::Blocked)
+				KRS_LOG(Warning, "[NavMesh] 이동 중 막힘: 자동 이동을 중지했습니다.");
+			return;
+		}
+	}
+
 	const FQuat Rotation = PossessedPawn->GetMovementInputRotation().Quaternion();
 	// UE와 같이 축 값(-1~1)만 넘긴다. DeltaTime은 입력을 소비해 실제로 움직이는 쪽(MovementComponent / Pawn Tick)이 곱한다.
 	if (Forward != 0.0f)
@@ -77,9 +99,48 @@ void APlayerController::Possess(APawn* InPawn)
 
 void APlayerController::UnPossess()
 {
+	StopFollowingPath();
 	if (PossessedPawn)
 		PossessedPawn->UnPossessed();
 	PossessedPawn = nullptr;
+}
+
+bool APlayerController::RequestFollowPath(const TArray<FVector>& WorldPath, float AcceptanceRadius)
+{
+	const ACharacter* Character = Cast<ACharacter>(PossessedPawn);
+	return Character && Character->CharacterMovementComponent &&
+		PathFollowingComponent->SetPath(WorldPath, AcceptanceRadius);
+}
+
+void APlayerController::StopFollowingPath()
+{
+	PathFollowingComponent->Reset();
+}
+
+FNavigationPathResult APlayerController::MoveToLocation(const FVector& Goal, float AcceptanceRadius)
+{
+	FNavigationPathResult Result;
+	const auto* Character = Cast<ACharacter>(PossessedPawn);
+	if (!Character || !Character->CapsuleComponent)
+	{
+		Result.Status = ENavigationQueryResult::Error;
+		Result.FailedAt = "no possessed character";
+		return Result;
+	}
+	if (auto* Navigation = UNavigationSystemV1::GetCurrent(GetWorld()))
+	{
+		FVector Start = Character->GetActorLocation();
+		Start.Z -= Character->CapsuleComponent->GetScaledCapsuleHalfHeight();
+		Result = Navigation->FindPathToLocationSynchronously(Start, Goal);
+		if (Result.Status == ENavigationQueryResult::Success && !RequestFollowPath(Result.PathPoints, AcceptanceRadius))
+		{
+			Result.Status = ENavigationQueryResult::Error;
+			Result.FailedAt = "RequestFollowPath";
+		}
+	}
+	if (Result.Status != ENavigationQueryResult::Success)
+		StopFollowingPath();
+	return Result;
 }
 
 void APlayerController::InputKey(int32 Key, bool bDown)
