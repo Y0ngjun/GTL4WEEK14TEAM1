@@ -3,9 +3,23 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/EditorUI/EditorStyle.h"
 #include "Editor/Viewports/ViewportsPanel.h"
+#include <charconv>
 
 namespace
 {
+	struct FNavigationSetting
+	{
+		const char* Key;
+		float FNavAgentProperties::* Value;
+	};
+
+	constexpr FNavigationSetting NavigationSettings[] = {
+	    {"NavigationAgent.Height", &FNavAgentProperties::Height},
+	    {"NavigationAgent.Radius", &FNavAgentProperties::Radius},
+	    {"NavigationAgent.MaxStepHeight", &FNavAgentProperties::MaxStepHeight},
+	    {"NavigationAgent.MaxSlope", &FNavAgentProperties::MaxSlope},
+	};
+
 	// 예전 editor.ini의 [Rendering] 키를 새 플래그 이름으로 바꾼다. 없으면 nullptr.
 	const char* FindLegacyShowFlagName(const std::string& Key)
 	{
@@ -110,6 +124,11 @@ bool FEditorSettingsManager::SaveSettings() const
 	File << "ScaleSnapSize=" << Settings.ScaleSnapSize << "\n";
 	File << "\n";
 
+	File << "[Navigation]\n";
+	for (const FNavigationSetting& Field : NavigationSettings)
+		File << std::format("{}={}\n", Field.Key, Settings.NavigationAgent.*(Field.Value));
+	File << "\n";
+
 	File << "[MultipleViewports]\n";
 	File << "Horizontal=" << Snapshot.MultipleViewportsHorizontal << "\n";
 	File << "Vertical=" << Snapshot.MultipleViewportsVertical << "\n";
@@ -136,7 +155,7 @@ bool FEditorSettingsManager::SaveSettings() const
 	File << "SpotShadowMapSizeLevel=" << Settings.SpotShadowMapSizeLevel << '\n';
 
 	File.close();
-	return true;
+	return !File.fail();
 }
 
 // 파일의 키를 파싱해 렌더·카메라·레이아웃 설정을 복원한다.
@@ -153,6 +172,7 @@ bool FEditorSettingsManager::LoadSettings()
 		return false;
 	}
 
+	FNavAgentProperties LoadedNavigationAgent;
 	uint8 LocationComponentMasks[4]{};
 	uint8 RotationComponentMasks[4]{};
 	for (int32 Index = 0; Index < 4; ++Index)
@@ -174,6 +194,22 @@ bool FEditorSettingsManager::LoadSettings()
 			std::string ValueStr;
 			if (std::getline(Iss, ValueStr))
 			{
+				if (Key.starts_with("NavigationAgent."))
+				{
+					for (const FNavigationSetting& Field : NavigationSettings)
+					{
+						if (Key != Field.Key)
+							continue;
+						float Value = 0.0f;
+						const char* End = ValueStr.data() + ValueStr.size();
+						const auto [Ptr, Error] = std::from_chars(ValueStr.data(), End, Value);
+						if (Error == std::errc() && Ptr == End)
+							LoadedNavigationAgent.*(Field.Value) = Value;
+						break;
+					}
+					continue;
+				}
+
 				// 새 View 키는 NaN·잘못된 숫자·범위 밖 값을 무시한다.
 				for (int32 Index = 0; Index < 4; ++Index)
 				{
@@ -348,6 +384,7 @@ bool FEditorSettingsManager::LoadSettings()
 	Settings.bLocationSnap = Settings.bLocationSnap && Settings.LocationSnapSize > 0.0f;
 	if (!Settings.bLocationSnap)
 		Settings.LocationSnapSize = 0.0f;
+	Settings.NavigationAgent = LoadedNavigationAgent.GetValidationError() ? FNavAgentProperties{} : LoadedNavigationAgent;
 	if (!std::isfinite(Settings.SceneDepthMaxRange))
 		Settings.SceneDepthMaxRange = 5000.0f;
 	Settings.SceneDepthMaxRange = FMath::Clamp(Settings.SceneDepthMaxRange, 10.0f, 1000000.0f);

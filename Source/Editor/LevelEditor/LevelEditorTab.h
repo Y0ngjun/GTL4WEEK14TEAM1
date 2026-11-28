@@ -29,6 +29,7 @@ public:
 	TDelegate<> OnRedo;
 	TDelegate<EFbxImportMode> OnImportFbx;
 	TDelegate<> OnBuildNavigation;
+	TDelegate<> OnOpenNavigationSettings;
 	TDelegate<> OnPackageGame;
 	TDelegate<const FString&> OnLevelLoaded;
 

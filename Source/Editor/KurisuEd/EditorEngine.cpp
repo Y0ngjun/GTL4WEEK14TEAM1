@@ -319,7 +319,8 @@ void UEditorEngine::InitLevelEditorTab()
 	LevelEditorTab->SetIsPackagingQuery([this]()
 	                                    { return Packager.IsRunning(); });
 	LevelEditorTab->OnBuildNavigation.AddDynamic(this, &UEditorEngine::BuildNavigation);
-	LevelEditorTab->SetCanBuildNavigationQuery([this]() { return EditorWorld && !IsPlaying(); });
+	LevelEditorTab->OnOpenNavigationSettings.AddDynamic(this, &UEditorEngine::OpenNavigationSettings);
+	LevelEditorTab->SetCanBuildNavigationQuery([this]() { return EditorSettings && EditorWorld && !IsPlaying(); });
 
 	OutputLogPanel = LevelEditorTab->AddPanel<FOutputLogPanel>();
 	OutputLogPanel->SetOpen(false);
@@ -1267,6 +1268,7 @@ void UEditorEngine::Tick(const float DeltaTime)
 		ImGuiRenderer->Begin();
 
 		EditorManager->DrawEditorUI();
+		DrawNavigationSettings();
 		DrawUnsavedScenePrompt();
 		// NewFrame과 패널 배치 이후의 입력/좌표를 사용해야 클릭과 기즈모 피킹이 일치한다.
 		UpdateGizmoAndPicking();
@@ -2198,14 +2200,14 @@ void UEditorEngine::SaveCurrentScene()
 	}
 }
 
-// 공통 파일 유틸리티로 새 경로에 씬을 저장한다.
 void UEditorEngine::BuildNavigation()
 {
 	auto* Navigation = UNavigationSystemV1::GetCurrent(EditorWorld);
-	if (!Navigation || IsPlaying())
+	if (!Navigation || !EditorSettings || IsPlaying())
 		return;
 
-	const FNavigationBuildResult Result = Navigation->Build();
+	const FNavAgentProperties& Agent = EditorSettings->GetSettings().NavigationAgent;
+	const FNavigationBuildResult Result = Navigation->Build(Agent);
 	if (Result.FailedAt)
 	{
 		KRS_LOG(Warning, "[NavMesh] Build Navigation 실패: {} (메시 {}, 삼각형 {})",
@@ -2216,6 +2218,72 @@ void UEditorEngine::BuildNavigation()
 		Result.MeshComponentCount, Result.TriangleCount, Result.PolygonCount);
 }
 
+void UEditorEngine::OpenNavigationSettings()
+{
+	if (!EditorSettings || IsPlaying())
+		return;
+	NavigationAgentDraft = EditorSettings->GetSettings().NavigationAgent;
+	bNavigationSettingsSaveFailed = false;
+	bNavigationSettingsRequested = true;
+}
+
+void UEditorEngine::DrawNavigationSettings()
+{
+	constexpr const char* PopupId = "Navigation Settings";
+	if (bNavigationSettingsRequested)
+	{
+		bNavigationSettingsRequested = false;
+		ImGui::OpenPopup(PopupId);
+	}
+
+	const ImGuiViewport* Viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(Viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	if (!ImGui::BeginPopupModal(PopupId, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		return;
+
+	ImGui::PushItemWidth(180.0f);
+	ImGui::InputFloat("Agent Height (cm)", &NavigationAgentDraft.Height, 0.0f, 0.0f, "%.3f");
+	ImGui::InputFloat("Agent Radius (cm)", &NavigationAgentDraft.Radius, 0.0f, 0.0f, "%.3f");
+	ImGui::InputFloat("Max Step Height (cm)", &NavigationAgentDraft.MaxStepHeight, 0.0f, 0.0f, "%.3f");
+	ImGui::InputFloat("Max Slope (degrees)", &NavigationAgentDraft.MaxSlope, 0.0f, 0.0f, "%.3f");
+	ImGui::PopItemWidth();
+
+	if (ImGui::Button("Reset to Defaults"))
+	{
+		NavigationAgentDraft = {};
+		bNavigationSettingsSaveFailed = false;
+	}
+
+	const char* ValidationError = NavigationAgentDraft.GetValidationError();
+	if (ValidationError)
+		ImGui::TextColored(EditorColor::ToVec4(EditorColor::Warning), "%s", ValidationError);
+	else if (bNavigationSettingsSaveFailed)
+		ImGui::TextColored(EditorColor::ToVec4(EditorColor::Warning), "Could not save navigation settings.");
+	else
+		ImGui::TextDisabled("Run Build Navigation to apply saved settings.");
+
+	ImGui::Separator();
+	ImGui::BeginDisabled(ValidationError != nullptr || !EditorSettings || IsPlaying());
+	if (ImGui::Button("Save"))
+	{
+		FNavAgentProperties& SavedAgent = EditorSettings->GetMutableSettings().NavigationAgent;
+		const FNavAgentProperties PreviousAgent = SavedAgent;
+		SavedAgent = NavigationAgentDraft;
+		bNavigationSettingsSaveFailed = !EditorSettings->SaveSettings();
+		if (bNavigationSettingsSaveFailed)
+			SavedAgent = PreviousAgent;
+		else
+			ImGui::CloseCurrentPopup();
+	}
+	ImGui::EndDisabled();
+	ImGui::SameLine();
+	if (ImGui::Button("Cancel"))
+		ImGui::CloseCurrentPopup();
+
+	ImGui::EndPopup();
+}
+
+// 공통 파일 유틸리티로 새 경로에 씬을 저장한다.
 void UEditorEngine::SaveSceneAs()
 {
 	if (IsPlaying())

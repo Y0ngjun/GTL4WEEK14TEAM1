@@ -4,6 +4,7 @@
 #include "Core/Types.h"
 #include "Math/Quat.h"
 #include "Math/Vector.h"
+#include "Navigation/NavigationTypes.h"
 #include "Render/RenderEnums.h"
 #include "Render/ShowFlags.h"
 
@@ -11,6 +12,8 @@ class UWorld;
 
 struct FEditorSettings
 {
+	FNavAgentProperties NavigationAgent;
+
 	const uint32 DirectionalShadowMapSizePerLevels[5] = {256, 512, 1024, 2048, 4096};
 	const uint32 PointShadowMapSizePerLevels[5] = {128, 256, 512, 1024, 2048};
 	const uint32 SpotShadowMapSizePerLevels[5] = {128, 256, 512, 1024, 2048};

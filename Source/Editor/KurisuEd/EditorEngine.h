@@ -317,6 +317,11 @@ private:
 	void SaveCurrentScene();
 	void SaveSceneAs();
 	void BuildNavigation();
+	void OpenNavigationSettings();
+	void DrawNavigationSettings();
+	FNavAgentProperties NavigationAgentDraft;
+	bool bNavigationSettingsRequested = false;
+	bool bNavigationSettingsSaveFailed = false;
 	void QueueProjectThumbnail(bool bOnlyIfMissing = false);
 	void SaveProjectThumbnail();
 	FString PendingThumbnailScene;

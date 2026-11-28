@@ -10,6 +10,8 @@ struct FNavAgentProperties
 	float Height = 180.0f;
 	float MaxStepHeight = 30.0f;
 	float MaxSlope = 45.0f;
+
+	const char* GetValidationError() const;
 };
 
 struct FNavigationBuildResult

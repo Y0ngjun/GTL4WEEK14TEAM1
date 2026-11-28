@@ -30,6 +30,19 @@ namespace
 	}
 }
 
+const char* FNavAgentProperties::GetValidationError() const
+{
+	if (!std::isfinite(Height) || Height < CellHeight * 3 || Height >= RC_SPAN_MAX_HEIGHT * CellHeight)
+		return "Agent height must be at least 30 cm and within the heightfield range.";
+	if (!std::isfinite(Radius) || Radius < 0.0f || Radius > 127 * CellSize)
+		return "Agent radius must be between 0 and 3175 cm.";
+	if (!std::isfinite(MaxStepHeight) || MaxStepHeight < 0.0f || MaxStepHeight >= RC_SPAN_MAX_HEIGHT * CellHeight)
+		return "Max step height must be non-negative and within the heightfield range.";
+	if (!std::isfinite(MaxSlope) || MaxSlope < 0.0f || MaxSlope >= 90.0f)
+		return "Max slope must be at least 0 degrees and less than 90 degrees.";
+	return nullptr;
+}
+
 FRecastNavMesh::FRecastNavMesh() = default;
 FRecastNavMesh::~FRecastNavMesh() = default;
 
@@ -82,10 +95,7 @@ FNavigationBuildResult FRecastNavMesh::Build(const float* Vertices, int VertexCo
 		Result.FailedAt = "no navigation geometry";
 		return Result;
 	}
-	if (!std::isfinite(Agent.Height) || Agent.Height < CellHeight * 3 || Agent.Height >= RC_SPAN_MAX_HEIGHT * CellHeight ||
-		!std::isfinite(Agent.Radius) || Agent.Radius < 0.0f || Agent.Radius > 127 * CellSize ||
-		!std::isfinite(Agent.MaxStepHeight) || Agent.MaxStepHeight < 0.0f || Agent.MaxStepHeight >= RC_SPAN_MAX_HEIGHT * CellHeight ||
-		!std::isfinite(Agent.MaxSlope) || Agent.MaxSlope < 0.0f || Agent.MaxSlope >= 90.0f)
+	if (Agent.GetValidationError())
 	{
 		Result.FailedAt = "invalid agent properties";
 		return Result;
